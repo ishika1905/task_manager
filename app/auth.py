@@ -9,7 +9,7 @@ from app import models, database
 from app.models import RoleEnum
 
 # ===================== Config =====================
-SECRET_KEY = "your_secret_key"  # Replace with a secure key from env in production
+SECRET_KEY = "your_secret_key"  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

@@ -5,17 +5,19 @@ from datetime import timedelta
 from . import models, schemas, auth, database, tasks
 from .auth import authenticate_user, create_access_token, get_password_hash, get_user_by_email
 from .database import get_db
+from fastapi import WebSocket
+
 from app.routes import task_routes 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 app.include_router(task_routes.router) 
-# 👋 Welcome route
+
 @app.get("/")
 def root():
     return {"message": "Welcome to the Task Manager API!"}
 
-# 🧑‍💻 User Registration
+#  User Registration
 @app.post("/register", response_model=schemas.User)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = get_user_by_email(db, user.email)
@@ -28,7 +30,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-# 🔐 User Login and JWT Token Generation
+# User Login 
 @app.post("/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
@@ -40,15 +42,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# 🧠 Include task routes (CRUD + background email tasks)
+#  Include task routes (CRUD + background email tasks)
 app.include_router(tasks.router)
 
-# 🔴 Real-Time WebSocket for Task Updates
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_text("📢 Real-time task updates enabled.")
-    await websocket.close()
+#  Real-Time WebSocket for Task Updates
+@app.websocket("/ws/{user_id}")
+async def websocket_route(websocket: WebSocket, user_id: str):
+    """WebSocket route for real-time updates."""
+    await websocket_endpoint(websocket, user_id)
 
 if __name__ == "__main__":
     import uvicorn
